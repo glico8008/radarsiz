@@ -454,7 +454,25 @@
 
         function drawMap() {
             const map = document.getElementById('turkey-map');
+            map.innerHTML = ''; // Önce temizle
             const rect = map.getBoundingClientRect();
+            
+            // Şehirleri işaretle (EN ÖNCE)
+            Object.entries(cities).forEach(([cityName, data]) => {
+                const marker = document.createElement('div');
+                marker.className = 'city-marker';
+                marker.style.left = (data.x * rect.width) + 'px';
+                marker.style.top = (data.y * rect.height) + 'px';
+                
+                const label = document.createElement('div');
+                label.className = 'city-name';
+                label.textContent = cityName;
+                label.style.left = (data.x * rect.width) + 'px';
+                label.style.top = (data.y * rect.height) + 'px';
+                
+                map.appendChild(marker);
+                map.appendChild(label);
+            });
             
             // Hava yollarını çiz
             Object.entries(waypoints).forEach(([airway, points]) => {
