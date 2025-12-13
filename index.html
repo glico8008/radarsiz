@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Radarsız Yaklaşma Simülatörü</title>
+    <title>Radarsız Yaklaşma Simülatörü - Profesyonel</title>
     <style>
         * {
             margin: 0;
@@ -15,9 +15,10 @@
             background: #0a0e27;
             color: #00ff00;
             padding: 20px;
+            overflow-x: hidden;
         }
         .container {
-            max-width: 1600px;
+            max-width: 1800px;
             margin: 0 auto;
         }
         h1 {
@@ -28,7 +29,7 @@
         }
         .main-grid {
             display: grid;
-            grid-template-columns: 350px 1fr 300px;
+            grid-template-columns: 350px 1fr 400px;
             gap: 20px;
         }
         .panel {
@@ -77,6 +78,13 @@
         button:hover {
             background: #00ffff;
         }
+        .action-button {
+            padding: 6px 10px;
+            font-size: 11px;
+            margin: 2px;
+            display: inline-block;
+            width: auto;
+        }
         #map-container {
             position: relative;
             background: #0f1429;
@@ -100,18 +108,60 @@
             transform: translate(-50%, -50%);
             box-shadow: 0 0 15px #ff0000;
             z-index: 10;
+            transition: all 0.5s linear;
+        }
+        .aircraft.holding {
+            background: #ff9900;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 15px #ff9900; }
+            50% { box-shadow: 0 0 25px #ff9900; }
         }
         .aircraft-label {
             position: absolute;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.9);
             color: #00ff00;
             padding: 4px 8px;
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 10px;
             white-space: nowrap;
             border: 1px solid #00ff00;
             transform: translate(-50%, -120%);
             z-index: 11;
+            line-height: 1.3;
+        }
+        .waypoint {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #ffff00;
+            border: 2px solid #fff;
+            transform: translate(-50%, -50%) rotate(45deg);
+            z-index: 5;
+        }
+        .waypoint-label {
+            position: absolute;
+            color: #ffff00;
+            font-size: 11px;
+            font-weight: bold;
+            transform: translate(-50%, 15px);
+            white-space: nowrap;
+            text-shadow: 0 0 5px #000;
+        }
+        .airway {
+            position: absolute;
+            border-top: 2px dashed #00ffff;
+            opacity: 0.3;
+            z-index: 1;
+        }
+        .airway-label {
+            position: absolute;
+            color: #00ffff;
+            font-size: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 2px 5px;
+            border-radius: 3px;
         }
         .city-marker {
             position: absolute;
@@ -127,10 +177,10 @@
             color: #00ffff;
             font-size: 10px;
             transform: translate(-50%, 10px);
-            white-space: nowrap;
+            whitespace: nowrap;
         }
         .aircraft-list {
-            max-height: 600px;
+            max-height: 400px;
             overflow-y: auto;
         }
         .aircraft-item {
@@ -140,13 +190,17 @@
             padding: 10px;
             margin-bottom: 10px;
         }
+        .aircraft-item.holding {
+            border-color: #ff9900;
+            background: #1a1100;
+        }
         .aircraft-item h3 {
             color: #ffff00;
             font-size: 14px;
             margin-bottom: 8px;
         }
         .aircraft-info {
-            font-size: 11px;
+            font-size: 10px;
             line-height: 1.6;
         }
         .time-display {
@@ -170,6 +224,7 @@
             margin: 10px 0;
             font-weight: bold;
             animation: blink 1s infinite;
+            font-size: 11px;
         }
         @keyframes blink {
             0%, 50%, 100% { opacity: 1; }
@@ -179,15 +234,42 @@
             background: #ff9900;
             color: #000;
         }
+        .info {
+            background: #0066ff;
+            color: #fff;
+            animation: none;
+        }
         .speed-control {
-            display: flex;
-            gap: 10px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
             margin-bottom: 15px;
         }
         .speed-control button {
-            flex: 1;
             padding: 8px;
             margin: 0;
+            font-size: 11px;
+        }
+        .position-reports {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #0a0e27;
+            border: 1px solid #00ff00;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 10px;
+        }
+        .report-item {
+            padding: 5px;
+            margin: 3px 0;
+            background: #1a1f3a;
+            border-left: 3px solid #00ff00;
+            border-radius: 2px;
+        }
+        .report-time {
+            color: #ffff00;
+            font-weight: bold;
         }
         ::-webkit-scrollbar {
             width: 8px;
@@ -199,11 +281,19 @@
             background: #00ff00;
             border-radius: 4px;
         }
+        .separation-info {
+            background: #1a1f3a;
+            border: 1px solid #00ffff;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 11px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🛫 RADARSIZ YAKLAŞMA SİMÜLATÖRÜ 🛬</h1>
+        <h1>🛫 RADARSIZ YAKLAŞMA SİMÜLATÖRÜ - PROFESYONel ATC 🛬</h1>
         
         <div class="main-grid">
             <!-- Sol Panel - Uçak Ekleme -->
@@ -221,8 +311,12 @@
                 </div>
                 
                 <div class="form-group">
-                    <label>Varış Şehri (Ankara):</label>
-                    <input type="text" value="ANKARA (LTAC)" disabled>
+                    <label>Hava Yolu Rotası:</label>
+                    <select id="airway">
+                        <option value="W26">W26 (Kuzey Rotası)</option>
+                        <option value="W34">W34 (Güney Rotası)</option>
+                        <option value="W18">W18 (Doğu Rotası)</option>
+                    </select>
                 </div>
                 
                 <div class="form-group">
@@ -237,26 +331,42 @@
                 
                 <div class="form-group">
                     <label>Başlangıç Yüksekliği (feet):</label>
-                    <input type="number" id="aircraft-altitude" value="35000" step="1000" min="5000" max="41000">
+                    <select id="aircraft-altitude">
+                        <option value="29000">FL290</option>
+                        <option value="31000">FL310</option>
+                        <option value="33000">FL330</option>
+                        <option value="35000" selected>FL350</option>
+                        <option value="37000">FL370</option>
+                        <option value="39000">FL390</option>
+                    </select>
                 </div>
                 
                 <button onclick="addAircraft()">✈️ UÇAK EKLE</button>
                 <button onclick="clearAllAircraft()" style="background: #ff0000; color: white;">🗑️ HEPSİNİ SİL</button>
+                
+                <div class="separation-info">
+                    <strong>AYIRMA KRİTERLERİ:</strong><br>
+                    • Lateral: 5 NM minimum<br>
+                    • Vertical: 1000 ft (FL290+)<br>
+                    • Zaman Bazlı: 10 dakika<br>
+                    • Aynı rota: 2000 ft veya 10 dk
+                </div>
             </div>
             
             <!-- Orta Panel - Harita -->
             <div>
                 <div class="time-display">
                     <h2 id="sim-time">00:00:00</h2>
-                    <div style="font-size: 12px; color: #00ffff; margin-top: 5px;">Simülasyon Zamanı</div>
+                    <div style="font-size: 12px; color: #00ffff; margin-top: 5px;">Simülasyon Zamanı - LTAC (Ankara)</div>
                 </div>
                 
                 <div class="speed-control">
-                    <button onclick="setSimSpeed(1)">1x HIZ</button>
-                    <button onclick="setSimSpeed(2)">2x HIZ</button>
-                    <button onclick="setSimSpeed(5)">5x HIZ</button>
-                    <button onclick="setSimSpeed(10)">10x HIZ</button>
-                    <button onclick="togglePause()" id="pause-btn">⏸ DURAKLAT</button>
+                    <button onclick="setSimSpeed(1)">1x</button>
+                    <button onclick="setSimSpeed(2)">2x</button>
+                    <button onclick="setSimSpeed(5)">5x</button>
+                    <button onclick="setSimSpeed(10)">10x</button>
+                    <button onclick="setSimSpeed(30)">30x</button>
+                    <button onclick="togglePause()" id="pause-btn">⏸ PAUSE</button>
                 </div>
                 
                 <div id="map-container">
@@ -264,17 +374,28 @@
                 </div>
             </div>
             
-            <!-- Sağ Panel - Uçak Listesi ve Uyarılar -->
-            <div class="panel">
-                <h2>AKTİF UÇAKLAR</h2>
-                <div id="alerts"></div>
-                <div class="aircraft-list" id="aircraft-list"></div>
+            <!-- Sağ Panel -->
+            <div>
+                <div class="panel">
+                    <h2>UYARILAR & DURUM</h2>
+                    <div id="alerts"></div>
+                </div>
+                
+                <div class="panel" style="margin-top: 15px;">
+                    <h2>AKTİF UÇAKLAR</h2>
+                    <div class="aircraft-list" id="aircraft-list"></div>
+                </div>
+                
+                <div class="panel" style="margin-top: 15px;">
+                    <h2>POZİSYON RAPORLARI</h2>
+                    <div class="position-reports" id="position-reports"></div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Türkiye şehirleri ve koordinatları (harita üzerinde piksel bazlı, normalize edilmiş)
+        // Türkiye şehirleri ve koordinatları
         const cities = {
             'ADANA': {x: 0.65, y: 0.72, code: 'LTAF'},
             'ANKARA': {x: 0.52, y: 0.50, code: 'LTAC'},
@@ -294,13 +415,33 @@
             'SİVAS': {x: 0.66, y: 0.48, code: 'LTAR'}
         };
 
+        // Waypoint'ler (geçiş noktaları)
+        const waypoints = {
+            'W26': [
+                {name: 'ABANT', x: 0.45, y: 0.42},
+                {name: 'BOLTU', x: 0.49, y: 0.46},
+                {name: 'LTAC', x: 0.52, y: 0.50}
+            ],
+            'W34': [
+                {name: 'KIRKA', x: 0.46, y: 0.54},
+                {name: 'ETMEL', x: 0.49, y: 0.52},
+                {name: 'LTAC', x: 0.52, y: 0.50}
+            ],
+            'W18': [
+                {name: 'GOTEN', x: 0.60, y: 0.50},
+                {name: 'SUPUR', x: 0.56, y: 0.50},
+                {name: 'LTAC', x: 0.52, y: 0.50}
+            ]
+        };
+
         let aircraftData = [];
-        let simTime = 0; // Dakika cinsinden
+        let simTime = 0;
         let simSpeed = 1;
         let isPaused = false;
         let simInterval;
+        let positionReports = [];
 
-        // Sayfa yüklendiğinde şehirleri doldur
+        // Sayfa yüklendiğinde
         const departureSelect = document.getElementById('departure-city');
         Object.keys(cities).sort().forEach(city => {
             if (city !== 'ANKARA') {
@@ -311,10 +452,59 @@
             }
         });
 
-        // Haritayı çiz
         function drawMap() {
             const map = document.getElementById('turkey-map');
             const rect = map.getBoundingClientRect();
+            
+            // Hava yollarını çiz
+            Object.entries(waypoints).forEach(([airway, points]) => {
+                for (let i = 0; i < points.length - 1; i++) {
+                    const from = points[i];
+                    const to = points[i + 1];
+                    
+                    const line = document.createElement('div');
+                    line.className = 'airway';
+                    
+                    const length = Math.sqrt(Math.pow((to.x - from.x) * rect.width, 2) + 
+                                            Math.pow((to.y - from.y) * rect.height, 2));
+                    const angle = Math.atan2((to.y - from.y) * rect.height, 
+                                            (to.x - from.x) * rect.width) * 180 / Math.PI;
+                    
+                    line.style.width = length + 'px';
+                    line.style.left = (from.x * rect.width) + 'px';
+                    line.style.top = (from.y * rect.height) + 'px';
+                    line.style.transform = `rotate(${angle}deg)`;
+                    line.style.transformOrigin = '0 0';
+                    
+                    map.appendChild(line);
+                    
+                    if (i === 0) {
+                        const label = document.createElement('div');
+                        label.className = 'airway-label';
+                        label.textContent = airway;
+                        label.style.left = ((from.x + to.x) / 2 * rect.width) + 'px';
+                        label.style.top = ((from.y + to.y) / 2 * rect.height - 15) + 'px';
+                        map.appendChild(label);
+                    }
+                }
+            });
+            
+            // Waypoint'leri çiz
+            Object.values(waypoints).flat().forEach(wp => {
+                const marker = document.createElement('div');
+                marker.className = 'waypoint';
+                marker.style.left = (wp.x * rect.width) + 'px';
+                marker.style.top = (wp.y * rect.height) + 'px';
+                
+                const label = document.createElement('div');
+                label.className = 'waypoint-label';
+                label.textContent = wp.name;
+                label.style.left = (wp.x * rect.width) + 'px';
+                label.style.top = (wp.y * rect.height) + 'px';
+                
+                map.appendChild(marker);
+                map.appendChild(label);
+            });
             
             // Şehirleri işaretle
             Object.entries(cities).forEach(([cityName, data]) => {
@@ -350,9 +540,27 @@
             return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
         }
 
+        function addPositionReport(callsign, waypoint, time, altitude, nextWaypoint, eta) {
+            const report = {
+                time: time,
+                text: `${minutesToTime(time)} - ${callsign}: ${waypoint} FL${Math.floor(altitude/100)}, estimating ${nextWaypoint} at ${minutesToTime(eta)}`
+            };
+            positionReports.unshift(report);
+            if (positionReports.length > 20) positionReports.pop();
+            updatePositionReports();
+        }
+
+        function updatePositionReports() {
+            const reportsDiv = document.getElementById('position-reports');
+            reportsDiv.innerHTML = positionReports.map(r => 
+                `<div class="report-item"><span class="report-time">${r.text.split(' - ')[0]}</span> - ${r.text.split(' - ')[1]}</div>`
+            ).join('');
+        }
+
         function addAircraft() {
             const callsign = document.getElementById('callsign').value.trim();
             const departureCity = document.getElementById('departure-city').value;
+            const airway = document.getElementById('airway').value;
             const departureTime = document.getElementById('departure-time').value;
             const speed = parseInt(document.getElementById('aircraft-speed').value);
             const altitude = parseInt(document.getElementById('aircraft-altitude').value);
@@ -362,34 +570,31 @@
                 return;
             }
 
+            const route = waypoints[airway];
             const departure = cities[departureCity];
-            const arrival = cities['ANKARA'];
             
-            const distance = calculateDistance(departure.x, departure.y, arrival.x, arrival.y);
-            const flightTimeMinutes = (distance * 800) / (speed / 60); // Yaklaşık uçuş süresi
-
             const aircraft = {
                 id: Date.now(),
                 callsign: callsign,
                 departure: departureCity,
-                arrival: 'ANKARA',
+                airway: airway,
+                route: route,
                 departureTime: timeToMinutes(departureTime),
                 speed: speed,
                 altitude: altitude,
+                targetAltitude: altitude,
                 currentX: departure.x,
                 currentY: departure.y,
-                targetX: arrival.x,
-                targetY: arrival.y,
-                distance: distance,
-                flightTime: flightTimeMinutes,
-                elapsedTime: 0,
-                status: 'WAITING'
+                currentWaypointIndex: 0,
+                status: 'WAITING',
+                isHolding: false,
+                holdingTime: 0,
+                lastReportedWaypoint: null
             };
 
             aircraftData.push(aircraft);
             updateAircraftList();
             
-            // Yeni uçak ekledikten sonra callsign'ı artır
             const match = callsign.match(/^([A-Z]+)(\d+)$/);
             if (match) {
                 const prefix = match[1];
@@ -398,29 +603,63 @@
             }
         }
 
+        function issueSpeedReduction(aircraft, newSpeed) {
+            aircraft.speed = newSpeed;
+            addPositionReport(aircraft.callsign, 'ATC', simTime, aircraft.altitude, 
+                            'COMMAND', simTime);
+            const alertsDiv = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = 'alert info';
+            alert.textContent = `✈️ ${aircraft.callsign}, REDUCE SPEED TO ${newSpeed} KNOTS`;
+            alertsDiv.insertBefore(alert, alertsDiv.firstChild);
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        function issueHolding(aircraft) {
+            aircraft.isHolding = true;
+            aircraft.holdingTime = 0;
+            const alertsDiv = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = 'alert warning';
+            alert.textContent = `🔄 ${aircraft.callsign}, HOLD AT PRESENT POSITION`;
+            alertsDiv.insertBefore(alert, alertsDiv.firstChild);
+        }
+
+        function releaseFromHolding(aircraft) {
+            aircraft.isHolding = false;
+            const alertsDiv = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = 'alert info';
+            alert.textContent = `✅ ${aircraft.callsign}, CONTINUE APPROACH`;
+            alertsDiv.insertBefore(alert, alertsDiv.firstChild);
+            setTimeout(() => alert.remove(), 5000);
+        }
+
         function updateAircraftList() {
             const list = document.getElementById('aircraft-list');
             list.innerHTML = '';
 
             aircraftData.forEach(aircraft => {
                 const item = document.createElement('div');
-                item.className = 'aircraft-item';
+                item.className = 'aircraft-item' + (aircraft.isHolding ? ' holding' : '');
                 
-                const eta = aircraft.departureTime + aircraft.flightTime;
-                const progress = aircraft.status === 'FLYING' ? 
-                    Math.min(100, (aircraft.elapsedTime / aircraft.flightTime) * 100) : 0;
+                const nextWaypoint = aircraft.currentWaypointIndex < aircraft.route.length ? 
+                    aircraft.route[aircraft.currentWaypointIndex].name : 'LANDED';
                 
                 item.innerHTML = `
                     <h3>${aircraft.callsign}</h3>
                     <div class="aircraft-info">
-                        <div>Rota: ${aircraft.departure} → ${aircraft.arrival}</div>
-                        <div>Kalkış: ${minutesToTime(aircraft.departureTime)}</div>
-                        <div>ETA: ${minutesToTime(eta)}</div>
-                        <div>Hız: ${aircraft.speed} kts</div>
-                        <div>Yükseklik: FL${Math.floor(aircraft.altitude/100)}</div>
-                        <div>Durum: ${aircraft.status}</div>
-                        <div>İlerleme: ${progress.toFixed(1)}%</div>
+                        <div>Rota: ${aircraft.departure} → ANKARA</div>
+                        <div>Airway: ${aircraft.airway}</div>
+                        <div>Next: ${nextWaypoint}</div>
+                        <div>Speed: ${aircraft.speed} kts</div>
+                        <div>Alt: FL${Math.floor(aircraft.altitude/100)}</div>
+                        <div>Status: ${aircraft.status}${aircraft.isHolding ? ' (HOLDING)' : ''}</div>
                     </div>
+                    ${aircraft.status === 'FLYING' ? `
+                        <button class="action-button" onclick="issueSpeedReduction(aircraftData.find(a => a.id === ${aircraft.id}), 250)">⬇️ Reduce Speed</button>
+                        <button class="action-button" onclick="${aircraft.isHolding ? 'releaseFromHolding' : 'issueHolding'}(aircraftData.find(a => a.id === ${aircraft.id}))">${aircraft.isHolding ? '✅ Release' : '🔄 Hold'}</button>
+                    ` : ''}
                 `;
                 list.appendChild(item);
             });
@@ -429,131 +668,54 @@
         function updateSimulation() {
             if (isPaused) return;
 
-            simTime += (simSpeed / 60); // Her saniyede simSpeed/60 dakika ekle
+            simTime += (simSpeed / 60);
             document.getElementById('sim-time').textContent = minutesToTime(simTime);
 
             const map = document.getElementById('turkey-map');
             const rect = map.getBoundingClientRect();
 
-            // Mevcut uçak işaretlerini temizle
             document.querySelectorAll('.aircraft, .aircraft-label').forEach(el => el.remove());
 
             const alerts = [];
 
             aircraftData.forEach((aircraft, index) => {
-                // Uçak kalkış zamanına geldi mi?
                 if (aircraft.status === 'WAITING' && simTime >= aircraft.departureTime) {
                     aircraft.status = 'FLYING';
+                    addPositionReport(aircraft.callsign, aircraft.departure, simTime, 
+                                    aircraft.altitude, aircraft.route[0].name, 
+                                    simTime + 15);
                 }
 
                 if (aircraft.status === 'FLYING') {
-                    aircraft.elapsedTime += (simSpeed / 60);
-                    const progress = Math.min(1, aircraft.elapsedTime / aircraft.flightTime);
-                    
-                    // Pozisyonu güncelle
-                    aircraft.currentX = aircraft.departure === 'ANKARA' ? 
-                        cities['ANKARA'].x + (aircraft.targetX - cities['ANKARA'].x) * progress :
-                        cities[aircraft.departure].x + (aircraft.targetX - cities[aircraft.departure].x) * progress;
-                    
-                    aircraft.currentY = aircraft.departure === 'ANKARA' ?
-                        cities['ANKARA'].y + (aircraft.targetY - cities['ANKARA'].y) * progress :
-                        cities[aircraft.departure].y + (aircraft.targetY - cities[aircraft.departure].y) * progress;
-
-                    // Yükseklik değişimi (iniş için)
-                    if (progress > 0.7) {
-                        const descentRate = (progress - 0.7) / 0.3;
-                        aircraft.altitude = 35000 - (30000 * descentRate);
-                    }
-
-                    // Uçak işaretini çiz
-                    const aircraftEl = document.createElement('div');
-                    aircraftEl.className = 'aircraft';
-                    aircraftEl.style.left = (aircraft.currentX * rect.width) + 'px';
-                    aircraftEl.style.top = (aircraft.currentY * rect.height) + 'px';
-
-                    const label = document.createElement('div');
-                    label.className = 'aircraft-label';
-                    label.style.left = (aircraft.currentX * rect.width) + 'px';
-                    label.style.top = (aircraft.currentY * rect.height) + 'px';
-                    label.textContent = `${aircraft.callsign}\nFL${Math.floor(aircraft.altitude/100)}\n${aircraft.speed}kts`;
-
-                    map.appendChild(aircraftEl);
-                    map.appendChild(label);
-
-                    // Varışa ulaştı mı?
-                    if (progress >= 1) {
-                        aircraft.status = 'LANDED';
-                    }
-                }
-
-                // Diğer uçaklarla ayrılma kontrolü
-                aircraftData.forEach((other, otherIndex) => {
-                    if (index !== otherIndex && aircraft.status === 'FLYING' && other.status === 'FLYING') {
-                        const dist = calculateDistance(aircraft.currentX, aircraft.currentY, 
-                                                      other.currentX, other.currentY);
-                        const altDiff = Math.abs(aircraft.altitude - other.altitude);
-                        
-                        // 5NM lateral veya 1000ft vertical separation
-                        if (dist < 0.05 && altDiff < 1000) {
-                            alerts.push({
-                                type: 'DANGER',
-                                message: `⚠️ AYIRMA İHLALİ: ${aircraft.callsign} ve ${other.callsign}`
-                            });
-                        } else if (dist < 0.08 && altDiff < 2000) {
-                            alerts.push({
-                                type: 'WARNING',
-                                message: `⚡ UYARI: ${aircraft.callsign} ve ${other.callsign} yakınlaşıyor`
-                            });
-                        }
-                    }
-                });
-            });
-
-            updateAircraftList();
-            updateAlerts(alerts);
-
-            // Tüm uçaklar indi mi?
-            if (aircraftData.length > 0 && aircraftData.every(a => a.status === 'LANDED')) {
-                isPaused = true;
-                document.getElementById('pause-btn').textContent = '▶ DEVAM';
-                alert('Tüm uçaklar iniş yaptı! Simülasyon tamamlandı.');
-            }
-        }
-
-        function updateAlerts(alerts) {
-            const alertsDiv = document.getElementById('alerts');
-            alertsDiv.innerHTML = '';
-            
-            alerts.forEach(alert => {
-                const alertEl = document.createElement('div');
-                alertEl.className = alert.type === 'DANGER' ? 'alert' : 'alert warning';
-                alertEl.textContent = alert.message;
-                alertsDiv.appendChild(alertEl);
-            });
-        }
-
-        function setSimSpeed(speed) {
-            simSpeed = speed;
-        }
-
-        function togglePause() {
-            isPaused = !isPaused;
-            document.getElementById('pause-btn').textContent = isPaused ? '▶ DEVAM' : '⏸ DURAKLAT';
-        }
-
-        function clearAllAircraft() {
-            if (confirm('Tüm uçakları silmek istediğinizden emin misiniz?')) {
-                aircraftData = [];
-                simTime = 0;
-                document.querySelectorAll('.aircraft, .aircraft-label').forEach(el => el.remove());
-                updateAircraftList();
-                document.getElementById('alerts').innerHTML = '';
-            }
-        }
-
-        // Başlangıç
-        drawMap();
-        simInterval = setInterval(updateSimulation, 1000);
-    </script>
-</body>
-</html>
+                    if (aircraft.isHolding) {
+                        aircraft.holdingTime += (simSpeed / 60);
+                        // Holding pattern - uçak aynı yerde döner
+                    } else {
+                        // Normal uçuş
+                        if (aircraft.currentWaypointIndex < aircraft.route.length) {
+                            const targetWp = aircraft.route[aircraft.currentWaypointIndex];
+                            const distance = calculateDistance(aircraft.currentX, aircraft.currentY, 
+                                                              targetWp.x, targetWp.y);
+                            
+                            const speed = aircraft.speed / 60 / 600; // Normalize edilmiş hız
+                            
+                            if (distance > speed) {
+                                const dx = targetWp.x - aircraft.currentX;
+                                const dy = targetWp.y - aircraft.currentY;
+                                const angle = Math.atan2(dy, dx);
+                                
+                                aircraft.currentX += Math.cos(angle) * speed;
+                                aircraft.currentY += Math.sin(angle) * speed;
+                            } else {
+                                aircraft.currentX = targetWp.x;
+                                aircraft.currentY = targetWp.y;
+                                
+                                // Waypoint'e ulaştı - pozisyon raporu
+                                const nextWpIndex = aircraft.currentWaypointIndex + 1;
+                                const nextWp = nextWpIndex < aircraft.route.length ? 
+                                    aircraft.route[nextWpIndex].name : 'LANDING';
+                                
+                                addPositionReport(aircraft.callsign, targetWp.name, simTime, 
+                                                aircraft.altitude, nextWp, simTime + 10);
+                                
+                                aircraft.currentWayp
