@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radarsız Yaklaşma Simülatörü</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0e27;
+            color: #00ff00;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        .main-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr 300px;
+            gap: 20px;
+        }
+        .panel {
+            background: #1a1f3a;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .panel h2 {
+            color: #00ffff;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 1px solid #00ff00;
+            padding-bottom: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #00ffff;
+            font-size: 12px;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            background: #0a0e27;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #00ff00;
+            border: none;
+            color: #0a0e27;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+        }
+        button:hover {
+            background: #00ffff;
+        }
+        #map-container {
+            position: relative;
+            background: #0f1429;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            height: 700px;
+            overflow: hidden;
+        }
+        #turkey-map {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        .aircraft {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: #ff0000;
+            border-radius: 50%;
+            border: 2px solid #ffff00;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 15px #ff0000;
+            z-index: 10;
+        }
+        .aircraft-label {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff00;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            border: 1px solid #00ff00;
+            transform: translate(-50%, -120%);
+            z-index: 11;
+        }
+        .city-marker {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #00ffff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 8px #00ffff;
+        }
+        .city-name {
+            position: absolute;
+            color: #00ffff;
+            font-size: 10px;
+            transform: translate(-50%, 10px);
+            white-space: nowrap;
+        }
+        .aircraft-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .aircraft-item {
+            background: #0a0e27;
+            border: 1px solid #00ff00;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .aircraft-item h3 {
+            color: #ffff00;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .aircraft-info {
+            font-size: 11px;
+            line-height: 1.6;
+        }
+        .time-display {
+            background: #0a0e27;
+            border: 2px solid #ffff00;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .time-display h2 {
+            color: #ffff00;
+            font-size: 24px;
+            margin: 0;
+        }
+        .alert {
+            background: #ff0000;
+            color: #ffffff;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.5; }
+        }
+        .warning {
+            background: #ff9900;
+            color: #000;
+        }
+        .speed-control {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .speed-control button {
+            flex: 1;
+            padding: 8px;
+            margin: 0;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0e27;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00ff00;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛫 RADARSIZ YAKLAŞMA SİMÜLATÖRÜ 🛬</h1>
+        
+        <div class="main-grid">
+            <!-- Sol Panel - Uçak Ekleme -->
+            <div class="panel">
+                <h2>UÇAK EKLE</h2>
+                
+                <div class="form-group">
+                    <label>Uçak Kodu (Callsign):</label>
+                    <input type="text" id="callsign" placeholder="THY952" value="THY952">
+                </div>
+                
+                <div class="form-group">
+                    <label>Kalkış Şehri:</label>
+                    <select id="departure-city"></select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Varış Şehri (Ankara):</label>
+                    <input type="text" value="ANKARA (LTAC)" disabled>
+                </div>
+                
+                <div class="form-group">
+                    <label>Kalkış Saati (SS:DD):</label>
+                    <input type="text" id="departure-time" placeholder="14:30" value="14:00">
+                </div>
+                
+                <div class="form-group">
+                    <label>Uçak Hızı (knots):</label>
+                    <input type="number" id="aircraft-speed" value="450" min="200" max="600">
+                </div>
+                
+                <div class="form-group">
+                    <label>Başlangıç Yüksekliği (feet):</label>
+                    <input type="number" id="aircraft-altitude" value="35000" step="1000" min="5000" max="41000">
+                </div>
+                
+                <button onclick="addAircraft()">✈️ UÇAK EKLE</button>
+                <button onclick="clearAllAircraft()" style="background: #ff0000; color: white;">🗑️ HEPSİNİ SİL</button>
+            </div>
+            
+            <!-- Orta Panel - Harita -->
+            <div>
+                <div class="time-display">
+                    <h2 id="sim-time">00:00:00</h2>
+                    <div style="font-size: 12px; color: #00ffff; margin-top: 5px;">Simülasyon Zamanı</div>
+                </div>
+                
+                <div class="speed-control">
+                    <button onclick="setSimSpeed(1)">1x HIZ</button>
+                    <button onclick="setSimSpeed(2)">2x HIZ</button>
+                    <button onclick="setSimSpeed(5)">5x HIZ</button>
+                    <button onclick="setSimSpeed(10)">10x HIZ</button>
+                    <button onclick="togglePause()" id="pause-btn">⏸ DURAKLAT</button>
+                </div>
+                
+                <div id="map-container">
+                    <div id="turkey-map"></div>
+                </div>
+            </div>
+            
+            <!-- Sağ Panel - Uçak Listesi ve Uyarılar -->
+            <div class="panel">
+                <h2>AKTİF UÇAKLAR</h2>
+                <div id="alerts"></div>
+                <div class="aircraft-list" id="aircraft-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Türkiye şehirleri ve koordinatları (harita üzerinde piksel bazlı, normalize edilmiş)
+        const cities = {
+            'ADANA': {x: 0.65, y: 0.72, code: 'LTAF'},
+            'ANKARA': {x: 0.52, y: 0.50, code: 'LTAC'},
+            'ANTALYA': {x: 0.48, y: 0.75, code: 'LTAI'},
+            'İSTANBUL': {x: 0.38, y: 0.35, code: 'LTFM'},
+            'İZMİR': {x: 0.35, y: 0.58, code: 'LTBJ'},
+            'TRABZON': {x: 0.72, y: 0.32, code: 'LTCG'},
+            'DİYARBAKIR': {x: 0.78, y: 0.60, code: 'LTCC'},
+            'ERZURUM': {x: 0.80, y: 0.48, code: 'LTCE'},
+            'GAZİANTEP': {x: 0.68, y: 0.68, code: 'LTAJ'},
+            'KAYSERİ': {x: 0.63, y: 0.55, code: 'LTAU'},
+            'KONYA': {x: 0.52, y: 0.62, code: 'LTAN'},
+            'BALIKESİR': {x: 0.37, y: 0.48, code: 'LTBF'},
+            'DALAMAN': {x: 0.40, y: 0.72, code: 'LTBS'},
+            'VAN': {x: 0.88, y: 0.58, code: 'LTCI'},
+            'MALATYA': {x: 0.70, y: 0.58, code: 'LTAT'},
+            'SİVAS': {x: 0.66, y: 0.48, code: 'LTAR'}
+        };
+
+        let aircraftData = [];
+        let simTime = 0; // Dakika cinsinden
+        let simSpeed = 1;
+        let isPaused = false;
+        let simInterval;
+
+        // Sayfa yüklendiğinde şehirleri doldur
+        const departureSelect = document.getElementById('departure-city');
+        Object.keys(cities).sort().forEach(city => {
+            if (city !== 'ANKARA') {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = `${city} (${cities[city].code})`;
+                departureSelect.appendChild(option);
+            }
+        });
+
+        // Haritayı çiz
+        function drawMap() {
+            const map = document.getElementById('turkey-map');
+            const rect = map.getBoundingClientRect();
+            
+            // Şehirleri işaretle
+            Object.entries(cities).forEach(([cityName, data]) => {
+                const marker = document.createElement('div');
+                marker.className = 'city-marker';
+                marker.style.left = (data.x * rect.width) + 'px';
+                marker.style.top = (data.y * rect.height) + 'px';
+                
+                const label = document.createElement('div');
+                label.className = 'city-name';
+                label.textContent = cityName;
+                label.style.left = (data.x * rect.width) + 'px';
+                label.style.top = (data.y * rect.height) + 'px';
+                
+                map.appendChild(marker);
+                map.appendChild(label);
+            });
+        }
+
+        function timeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function minutesToTime(minutes) {
+            const hrs = Math.floor(minutes / 60) % 24;
+            const mins = Math.floor(minutes % 60);
+            const secs = Math.floor((minutes % 1) * 60);
+            return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function calculateDistance(x1, y1, x2, y2) {
+            return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        }
+
+        function addAircraft() {
+            const callsign = document.getElementById('callsign').value.trim();
+            const departureCity = document.getElementById('departure-city').value;
+            const departureTime = document.getElementById('departure-time').value;
+            const speed = parseInt(document.getElementById('aircraft-speed').value);
+            const altitude = parseInt(document.getElementById('aircraft-altitude').value);
+
+            if (!callsign || !departureCity || !departureTime) {
+                alert('Lütfen tüm alanları doldurun!');
+                return;
+            }
+
+            const departure = cities[departureCity];
+            const arrival = cities['ANKARA'];
+            
+            const distance = calculateDistance(departure.x, departure.y, arrival.x, arrival.y);
+            const flightTimeMinutes = (distance * 800) / (speed / 60); // Yaklaşık uçuş süresi
+
+            const aircraft = {
+                id: Date.now(),
+                callsign: callsign,
+                departure: departureCity,
+                arrival: 'ANKARA',
+                departureTime: timeToMinutes(departureTime),
+                speed: speed,
+                altitude: altitude,
+                currentX: departure.x,
+                currentY: departure.y,
+                targetX: arrival.x,
+                targetY: arrival.y,
+                distance: distance,
+                flightTime: flightTimeMinutes,
+                elapsedTime: 0,
+                status: 'WAITING'
+            };
+
+            aircraftData.push(aircraft);
+            updateAircraftList();
+            
+            // Yeni uçak ekledikten sonra callsign'ı artır
+            const match = callsign.match(/^([A-Z]+)(\d+)$/);
+            if (match) {
+                const prefix = match[1];
+                const number = parseInt(match[2]) + 1;
+                document.getElementById('callsign').value = prefix + number;
+            }
+        }
+
+        function updateAircraftList() {
+            const list = document.getElementById('aircraft-list');
+            list.innerHTML = '';
+
+            aircraftData.forEach(aircraft => {
+                const item = document.createElement('div');
+                item.className = 'aircraft-item';
+                
+                const eta = aircraft.departureTime + aircraft.flightTime;
+                const progress = aircraft.status === 'FLYING' ? 
+                    Math.min(100, (aircraft.elapsedTime / aircraft.flightTime) * 100) : 0;
+                
+                item.innerHTML = `
+                    <h3>${aircraft.callsign}</h3>
+                    <div class="aircraft-info">
+                        <div>Rota: ${aircraft.departure} → ${aircraft.arrival}</div>
+                        <div>Kalkış: ${minutesToTime(aircraft.departureTime)}</div>
+                        <div>ETA: ${minutesToTime(eta)}</div>
+                        <div>Hız: ${aircraft.speed} kts</div>
+                        <div>Yükseklik: FL${Math.floor(aircraft.altitude/100)}</div>
+                        <div>Durum: ${aircraft.status}</div>
+                        <div>İlerleme: ${progress.toFixed(1)}%</div>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function updateSimulation() {
+            if (isPaused) return;
+
+            simTime += (simSpeed / 60); // Her saniyede simSpeed/60 dakika ekle
+            document.getElementById('sim-time').textContent = minutesToTime(simTime);
+
+            const map = document.getElementById('turkey-map');
+            const rect = map.getBoundingClientRect();
+
+            // Mevcut uçak işaretlerini temizle
+            document.querySelectorAll('.aircraft, .aircraft-label').forEach(el => el.remove());
+
+            const alerts = [];
+
+            aircraftData.forEach((aircraft, index) => {
+                // Uçak kalkış zamanına geldi mi?
+                if (aircraft.status === 'WAITING' && simTime >= aircraft.departureTime) {
+                    aircraft.status = 'FLYING';
+                }
+
+                if (aircraft.status === 'FLYING') {
+                    aircraft.elapsedTime += (simSpeed / 60);
+                    const progress = Math.min(1, aircraft.elapsedTime / aircraft.flightTime);
+                    
+                    // Pozisyonu güncelle
+                    aircraft.currentX = aircraft.departure === 'ANKARA' ? 
+                        cities['ANKARA'].x + (aircraft.targetX - cities['ANKARA'].x) * progress :
+                        cities[aircraft.departure].x + (aircraft.targetX - cities[aircraft.departure].x) * progress;
+                    
+                    aircraft.currentY = aircraft.departure === 'ANKARA' ?
+                        cities['ANKARA'].y + (aircraft.targetY - cities['ANKARA'].y) * progress :
+                        cities[aircraft.departure].y + (aircraft.targetY - cities[aircraft.departure].y) * progress;
+
+                    // Yükseklik değişimi (iniş için)
+                    if (progress > 0.7) {
+                        const descentRate = (progress - 0.7) / 0.3;
+                        aircraft.altitude = 35000 - (30000 * descentRate);
+                    }
+
+                    // Uçak işaretini çiz
+                    const aircraftEl = document.createElement('div');
+                    aircraftEl.className = 'aircraft';
+                    aircraftEl.style.left = (aircraft.currentX * rect.width) + 'px';
+                    aircraftEl.style.top = (aircraft.currentY * rect.height) + 'px';
+
+                    const label = document.createElement('div');
+                    label.className = 'aircraft-label';
+                    label.style.left = (aircraft.currentX * rect.width) + 'px';
+                    label.style.top = (aircraft.currentY * rect.height) + 'px';
+                    label.textContent = `${aircraft.callsign}\nFL${Math.floor(aircraft.altitude/100)}\n${aircraft.speed}kts`;
+
+                    map.appendChild(aircraftEl);
+                    map.appendChild(label);
+
+                    // Varışa ulaştı mı?
+                    if (progress >= 1) {
+                        aircraft.status = 'LANDED';
+                    }
+                }
+
+                // Diğer uçaklarla ayrılma kontrolü
+                aircraftData.forEach((other, otherIndex) => {
+                    if (index !== otherIndex && aircraft.status === 'FLYING' && other.status === 'FLYING') {
+                        const dist = calculateDistance(aircraft.currentX, aircraft.currentY, 
+                                                      other.currentX, other.currentY);
+                        const altDiff = Math.abs(aircraft.altitude - other.altitude);
+                        
+                        // 5NM lateral veya 1000ft vertical separation
+                        if (dist < 0.05 && altDiff < 1000) {
+                            alerts.push({
+                                type: 'DANGER',
+                                message: `⚠️ AYIRMA İHLALİ: ${aircraft.callsign} ve ${other.callsign}`
+                            });
+                        } else if (dist < 0.08 && altDiff < 2000) {
+                            alerts.push({
+                                type: 'WARNING',
+                                message: `⚡ UYARI: ${aircraft.callsign} ve ${other.callsign} yakınlaşıyor`
+                            });
+                        }
+                    }
+                });
+            });
+
+            updateAircraftList();
+            updateAlerts(alerts);
+
+            // Tüm uçaklar indi mi?
+            if (aircraftData.length > 0 && aircraftData.every(a => a.status === 'LANDED')) {
+                isPaused = true;
+                document.getElementById('pause-btn').textContent = '▶ DEVAM';
+                alert('Tüm uçaklar iniş yaptı! Simülasyon tamamlandı.');
+            }
+        }
+
+        function updateAlerts(alerts) {
+            const alertsDiv = document.getElementById('alerts');
+            alertsDiv.innerHTML = '';
+            
+            alerts.forEach(alert => {
+                const alertEl = document.createElement('div');
+                alertEl.className = alert.type === 'DANGER' ? 'alert' : 'alert warning';
+                alertEl.textContent = alert.message;
+                alertsDiv.appendChild(alertEl);
+            });
+        }
+
+        function setSimSpeed(speed) {
+            simSpeed = speed;
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            document.getElementById('pause-btn').textContent = isPaused ? '▶ DEVAM' : '⏸ DURAKLAT';
+        }
+
+        function clearAllAircraft() {
+            if (confirm('Tüm uçakları silmek istediğinizden emin misiniz?')) {
+                aircraftData = [];
+                simTime = 0;
+                document.querySelectorAll('.aircraft, .aircraft-label').forEach(el => el.remove());
+                updateAircraftList();
+                document.getElementById('alerts').innerHTML = '';
+            }
+        }
+
+        // Başlangıç
+        drawMap();
+        simInterval = setInterval(updateSimulation, 1000);
+    </script>
+</body>
+</html>
