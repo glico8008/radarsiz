@@ -452,55 +452,38 @@
             }
         });
 
-        function drawMap()
-        // TÜRKİYE SINIRI (basitleştirilmiş SVG path)
-const turkeyOutline = `
-M0.15,0.40 L0.20,0.35 L0.30,0.33 L0.40,0.32 L0.50,0.35 L0.60,0.38 L0.70,0.40 L0.80,0.45 
-L0.85,0.50 L0.88,0.55 L0.85,0.65 L0.78,0.70 L0.70,0.72 L0.60,0.74 L0.50,0.72 L0.40,0.68 
-L0.30,0.62 L0.20,0.55 L0.15,0.45 Z`;
-
-const svgNS = "http://www.w3.org/2000/svg";
-const svg = document.createElementNS(svgNS, "svg");
-svg.setAttribute("width", "100%");
-svg.setAttribute("height", "100%");
-svg.setAttribute("viewBox", "0 0 1 1");
-svg.style.position = "absolute";
-svg.style.top = 0;
-svg.style.left = 0;
-svg.style.width = "100%";
-svg.style.height = "100%";
-svg.style.opacity = "0.15";
-
-const path = document.createElementNS(svgNS, "path");
-path.setAttribute("d", turkeyOutline);
-path.setAttribute("fill", "#00ffff");
-path.setAttribute("stroke", "#00ffff");
-path.setAttribute("stroke-width", "0.002");
-svg.appendChild(path);
-
-map.appendChild(svg);
-
-        {
+   function drawMap() {
             const map = document.getElementById('turkey-map');
-            map.innerHTML = ''; // Önce temizle
+            map.innerHTML = '';
             const rect = map.getBoundingClientRect();
             
-            // Şehirleri işaretle (EN ÖNCE)
-            Object.entries(cities).forEach(([cityName, data]) => {
-                const marker = document.createElement('div');
-                marker.className = 'city-marker';
-                marker.style.left = (data.x * rect.width) + 'px';
-                marker.style.top = (data.y * rect.height) + 'px';
-                
-                const label = document.createElement('div');
-                label.className = 'city-name';
-                label.textContent = cityName;
-                label.style.left = (data.x * rect.width) + 'px';
-                label.style.top = (data.y * rect.height) + 'px';
-                
-                map.appendChild(marker);
-                map.appendChild(label);
-            });
+            // TÜRKİYE SINIRI (basitleştirilmiş SVG path)
+            const turkeyOutline = `
+            M0.15,0.40 L0.20,0.35 L0.30,0.33 L0.40,0.32 L0.50,0.35 L0.60,0.38 L0.70,0.40 L0.80,0.45 
+            L0.85,0.50 L0.88,0.55 L0.85,0.65 L0.78,0.70 L0.70,0.72 L0.60,0.74 L0.50,0.72 L0.40,0.68 
+            L0.30,0.62 L0.20,0.55 L0.15,0.45 Z`;
+
+            const svgNS = "http://www.w3.org/2000/svg";
+            const svg = document.createElementNS(svgNS, "svg");
+            svg.setAttribute("width", "100%");
+            svg.setAttribute("height", "100%");
+            svg.setAttribute("viewBox", "0 0 1 1");
+            svg.setAttribute("preserveAspectRatio", "none");
+            svg.style.position = "absolute";
+            svg.style.top = "0";
+            svg.style.left = "0";
+            svg.style.width = "100%";
+            svg.style.height = "100%";
+            svg.style.opacity = "0.15";
+
+            const path = document.createElementNS(svgNS, "path");
+            path.setAttribute("d", turkeyOutline);
+            path.setAttribute("fill", "#00ffff");
+            path.setAttribute("stroke", "#00ffff");
+            path.setAttribute("stroke-width", "0.002");
+            svg.appendChild(path);
+
+            map.appendChild(svg);
             
             // Hava yollarını çiz
             Object.entries(waypoints).forEach(([airway, points]) => {
@@ -535,6 +518,147 @@ map.appendChild(svg);
                 }
             });
             
+            // Waypoint'leri çiz
+            Object.values(waypoints).flat().forEach(wp => {
+                const marker = document.createElement('div');
+                marker.className = 'waypoint';
+                marker.style.left = (wp.x * rect.width) + 'px';
+                marker.style.top = (wp.y * rect.height) + 'px';
+                
+                const label = document.createElement('div');
+                label.className = 'waypoint-label';
+                label.textContent = wp.name;
+                label.style.left = (wp.x * rect.width) + 'px';
+                label.style.top = (wp.y * rect.height) + 'px';
+                
+                map.appendChild(marker);
+                map.appendChild(label);
+            });
+            
+            // Şehirleri işaretle
+            Object.entries(cities).forEach(([cityName, data]) => {
+                const marker = document.createElement('div');
+                marker.className = 'city-marker';
+                marker.style.left = (data.x * rect.width) + 'px';
+                marker.style.top = (data.y * rect.height) + 'px';
+                marker.style.width = cityName === 'ANKARA' ? '14px' : '10px';
+                marker.style.height = cityName === 'ANKARA' ? '14px' : '10px';
+                marker.style.background = cityName === 'ANKARA' ? '#ff0000' : '#00ffff';
+                marker.style.boxShadow = cityName === 'ANKARA' ? '0 0 15px #ff0000' : '0 0 8px #00ffff';
+                
+                const label = document.createElement('div');
+                label.className = 'city-name';
+                label.textContent = cityName;
+                label.style.left = (data.x * rect.width) + 'px';
+                label.style.top = (data.y * rect.height) + 'px';
+                
+                map.appendChild(marker);
+                map.appendChild(label);
+            });
+        }function drawMap() {
+            const map = document.getElementById('turkey-map');
+            map.innerHTML = '';
+            const rect = map.getBoundingClientRect();
+            
+            // TÜRKİYE SINIRI (basitleştirilmiş SVG path)
+            const turkeyOutline = `
+            M0.15,0.40 L0.20,0.35 L0.30,0.33 L0.40,0.32 L0.50,0.35 L0.60,0.38 L0.70,0.40 L0.80,0.45 
+            L0.85,0.50 L0.88,0.55 L0.85,0.65 L0.78,0.70 L0.70,0.72 L0.60,0.74 L0.50,0.72 L0.40,0.68 
+            L0.30,0.62 L0.20,0.55 L0.15,0.45 Z`;
+
+            const svgNS = "http://www.w3.org/2000/svg";
+            const svg = document.createElementNS(svgNS, "svg");
+            svg.setAttribute("width", "100%");
+            svg.setAttribute("height", "100%");
+            svg.setAttribute("viewBox", "0 0 1 1");
+            svg.setAttribute("preserveAspectRatio", "none");
+            svg.style.position = "absolute";
+            svg.style.top = "0";
+            svg.style.left = "0";
+            svg.style.width = "100%";
+            svg.style.height = "100%";
+            svg.style.opacity = "0.15";
+
+            const path = document.createElementNS(svgNS, "path");
+            path.setAttribute("d", turkeyOutline);
+            path.setAttribute("fill", "#00ffff");
+            path.setAttribute("stroke", "#00ffff");
+            path.setAttribute("stroke-width", "0.002");
+            svg.appendChild(path);
+
+            map.appendChild(svg);
+            
+            // Hava yollarını çiz
+            Object.entries(waypoints).forEach(([airway, points]) => {
+                for (let i = 0; i < points.length - 1; i++) {
+                    const from = points[i];
+                    const to = points[i + 1];
+                    
+                    const line = document.createElement('div');
+                    line.className = 'airway';
+                    
+                    const length = Math.sqrt(Math.pow((to.x - from.x) * rect.width, 2) + 
+                                            Math.pow((to.y - from.y) * rect.height, 2));
+                    const angle = Math.atan2((to.y - from.y) * rect.height, 
+                                            (to.x - from.x) * rect.width) * 180 / Math.PI;
+                    
+                    line.style.width = length + 'px';
+                    line.style.left = (from.x * rect.width) + 'px';
+                    line.style.top = (from.y * rect.height) + 'px';
+                    line.style.transform = `rotate(${angle}deg)`;
+                    line.style.transformOrigin = '0 0';
+                    
+                    map.appendChild(line);
+                    
+                    if (i === 0) {
+                        const label = document.createElement('div');
+                        label.className = 'airway-label';
+                        label.textContent = airway;
+                        label.style.left = ((from.x + to.x) / 2 * rect.width) + 'px';
+                        label.style.top = ((from.y + to.y) / 2 * rect.height - 15) + 'px';
+                        map.appendChild(label);
+                    }
+                }
+            });
+            
+            // Waypoint'leri çiz
+            Object.values(waypoints).flat().forEach(wp => {
+                const marker = document.createElement('div');
+                marker.className = 'waypoint';
+                marker.style.left = (wp.x * rect.width) + 'px';
+                marker.style.top = (wp.y * rect.height) + 'px';
+                
+                const label = document.createElement('div');
+                label.className = 'waypoint-label';
+                label.textContent = wp.name;
+                label.style.left = (wp.x * rect.width) + 'px';
+                label.style.top = (wp.y * rect.height) + 'px';
+                
+                map.appendChild(marker);
+                map.appendChild(label);
+            });
+            
+            // Şehirleri işaretle
+            Object.entries(cities).forEach(([cityName, data]) => {
+                const marker = document.createElement('div');
+                marker.className = 'city-marker';
+                marker.style.left = (data.x * rect.width) + 'px';
+                marker.style.top = (data.y * rect.height) + 'px';
+                marker.style.width = cityName === 'ANKARA' ? '14px' : '10px';
+                marker.style.height = cityName === 'ANKARA' ? '14px' : '10px';
+                marker.style.background = cityName === 'ANKARA' ? '#ff0000' : '#00ffff';
+                marker.style.boxShadow = cityName === 'ANKARA' ? '0 0 15px #ff0000' : '0 0 8px #00ffff';
+                
+                const label = document.createElement('div');
+                label.className = 'city-name';
+                label.textContent = cityName;
+                label.style.left = (data.x * rect.width) + 'px';
+                label.style.top = (data.y * rect.height) + 'px';
+                
+                map.appendChild(marker);
+                map.appendChild(label);
+            });
+        }
             // Waypoint'leri çiz
             Object.values(waypoints).flat().forEach(wp => {
                 const marker = document.createElement('div');
