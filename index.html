@@ -171,13 +171,15 @@
             border-radius: 50%;
             transform: translate(-50%, -50%);
             box-shadow: 0 0 8px #00ffff;
+            z-index: 3;
         }
         .city-name {
             position: absolute;
             color: #00ffff;
             font-size: 10px;
             transform: translate(-50%, 10px);
-            whitespace: nowrap;
+            white-space: nowrap;
+            z-index: 4;
         }
         .aircraft-list {
             max-height: 400px;
@@ -293,7 +295,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🛫 RADARSIZ YAKLAŞMA SİMÜLATÖRÜ - PROFESYONel ATC 🛬</h1>
+        <h1>🛫 RADARSIZ YAKLAŞMA SİMÜLATÖRÜ - PROFESYONEL ATC 🛬</h1>
         
         <div class="main-grid">
             <!-- Sol Panel - Uçak Ekleme -->
@@ -441,18 +443,23 @@
         let simInterval;
         let positionReports = [];
 
-        // Sayfa yüklendiğinde
-        const departureSelect = document.getElementById('departure-city');
-        Object.keys(cities).sort().forEach(city => {
-            if (city !== 'ANKARA') {
-                const option = document.createElement('option');
-                option.value = city;
-                option.textContent = `${city} (${cities[city].code})`;
-                departureSelect.appendChild(option);
-            }
+        // Sayfa yüklendiğinde başlat
+        window.addEventListener('load', () => {
+            const departureSelect = document.getElementById('departure-city');
+            Object.keys(cities).sort().forEach(city => {
+                if (city !== 'ANKARA') {
+                    const option = document.createElement('option');
+                    option.value = city;
+                    option.textContent = `${city} (${cities[city].code})`;
+                    departureSelect.appendChild(option);
+                }
+            });
+            
+            drawMap();
+            startSimulation();
         });
 
-   function drawMap() {
+        function drawMap() {
             const map = document.getElementById('turkey-map');
             map.innerHTML = '';
             const rect = map.getBoundingClientRect();
@@ -475,6 +482,7 @@
             svg.style.width = "100%";
             svg.style.height = "100%";
             svg.style.opacity = "0.15";
+            svg.style.pointerEvents = "none";
 
             const path = document.createElementNS(svgNS, "path");
             path.setAttribute("d", turkeyOutline);
@@ -545,148 +553,6 @@
                 marker.style.height = cityName === 'ANKARA' ? '14px' : '10px';
                 marker.style.background = cityName === 'ANKARA' ? '#ff0000' : '#00ffff';
                 marker.style.boxShadow = cityName === 'ANKARA' ? '0 0 15px #ff0000' : '0 0 8px #00ffff';
-                
-                const label = document.createElement('div');
-                label.className = 'city-name';
-                label.textContent = cityName;
-                label.style.left = (data.x * rect.width) + 'px';
-                label.style.top = (data.y * rect.height) + 'px';
-                
-                map.appendChild(marker);
-                map.appendChild(label);
-            });
-        }function drawMap() {
-            const map = document.getElementById('turkey-map');
-            map.innerHTML = '';
-            const rect = map.getBoundingClientRect();
-            
-            // TÜRKİYE SINIRI (basitleştirilmiş SVG path)
-            const turkeyOutline = `
-            M0.15,0.40 L0.20,0.35 L0.30,0.33 L0.40,0.32 L0.50,0.35 L0.60,0.38 L0.70,0.40 L0.80,0.45 
-            L0.85,0.50 L0.88,0.55 L0.85,0.65 L0.78,0.70 L0.70,0.72 L0.60,0.74 L0.50,0.72 L0.40,0.68 
-            L0.30,0.62 L0.20,0.55 L0.15,0.45 Z`;
-
-            const svgNS = "http://www.w3.org/2000/svg";
-            const svg = document.createElementNS(svgNS, "svg");
-            svg.setAttribute("width", "100%");
-            svg.setAttribute("height", "100%");
-            svg.setAttribute("viewBox", "0 0 1 1");
-            svg.setAttribute("preserveAspectRatio", "none");
-            svg.style.position = "absolute";
-            svg.style.top = "0";
-            svg.style.left = "0";
-            svg.style.width = "100%";
-            svg.style.height = "100%";
-            svg.style.opacity = "0.15";
-
-            const path = document.createElementNS(svgNS, "path");
-            path.setAttribute("d", turkeyOutline);
-            path.setAttribute("fill", "#00ffff");
-            path.setAttribute("stroke", "#00ffff");
-            path.setAttribute("stroke-width", "0.002");
-            svg.appendChild(path);
-
-            map.appendChild(svg);
-            
-            // Hava yollarını çiz
-            Object.entries(waypoints).forEach(([airway, points]) => {
-                for (let i = 0; i < points.length - 1; i++) {
-                    const from = points[i];
-                    const to = points[i + 1];
-                    
-                    const line = document.createElement('div');
-                    line.className = 'airway';
-                    
-                    const length = Math.sqrt(Math.pow((to.x - from.x) * rect.width, 2) + 
-                                            Math.pow((to.y - from.y) * rect.height, 2));
-                    const angle = Math.atan2((to.y - from.y) * rect.height, 
-                                            (to.x - from.x) * rect.width) * 180 / Math.PI;
-                    
-                    line.style.width = length + 'px';
-                    line.style.left = (from.x * rect.width) + 'px';
-                    line.style.top = (from.y * rect.height) + 'px';
-                    line.style.transform = `rotate(${angle}deg)`;
-                    line.style.transformOrigin = '0 0';
-                    
-                    map.appendChild(line);
-                    
-                    if (i === 0) {
-                        const label = document.createElement('div');
-                        label.className = 'airway-label';
-                        label.textContent = airway;
-                        label.style.left = ((from.x + to.x) / 2 * rect.width) + 'px';
-                        label.style.top = ((from.y + to.y) / 2 * rect.height - 15) + 'px';
-                        map.appendChild(label);
-                    }
-                }
-            });
-            
-            // Waypoint'leri çiz
-            Object.values(waypoints).flat().forEach(wp => {
-                const marker = document.createElement('div');
-                marker.className = 'waypoint';
-                marker.style.left = (wp.x * rect.width) + 'px';
-                marker.style.top = (wp.y * rect.height) + 'px';
-                
-                const label = document.createElement('div');
-                label.className = 'waypoint-label';
-                label.textContent = wp.name;
-                label.style.left = (wp.x * rect.width) + 'px';
-                label.style.top = (wp.y * rect.height) + 'px';
-                
-                map.appendChild(marker);
-                map.appendChild(label);
-            });
-            
-            // Şehirleri işaretle
-            Object.entries(cities).forEach(([cityName, data]) => {
-                const marker = document.createElement('div');
-                marker.className = 'city-marker';
-                marker.style.left = (data.x * rect.width) + 'px';
-                marker.style.top = (data.y * rect.height) + 'px';
-                marker.style.width = cityName === 'ANKARA' ? '14px' : '10px';
-                marker.style.height = cityName === 'ANKARA' ? '14px' : '10px';
-                marker.style.background = cityName === 'ANKARA' ? '#ff0000' : '#00ffff';
-                marker.style.boxShadow = cityName === 'ANKARA' ? '0 0 15px #ff0000' : '0 0 8px #00ffff';
-                
-                const label = document.createElement('div');
-                label.className = 'city-name';
-                label.textContent = cityName;
-                label.style.left = (data.x * rect.width) + 'px';
-                label.style.top = (data.y * rect.height) + 'px';
-                
-                map.appendChild(marker);
-                map.appendChild(label);
-            });
-        }
-            // Waypoint'leri çiz
-            Object.values(waypoints).flat().forEach(wp => {
-                const marker = document.createElement('div');
-                marker.className = 'waypoint';
-                marker.style.left = (wp.x * rect.width) + 'px';
-                marker.style.top = (wp.y * rect.height) + 'px';
-                
-                const label = document.createElement('div');
-                label.className = 'waypoint-label';
-                label.textContent = wp.name;
-                label.style.left = (wp.x * rect.width) + 'px';
-                label.style.top = (wp.y * rect.height) + 'px';
-                
-                map.appendChild(marker);
-                map.appendChild(label);
-            });
-            
-            // Şehirleri işaretle
-            Object.entries(cities).forEach(([cityName, data]) => {
-                const marker = document.createElement('div');
-              marker.className = 'city-marker';
-marker.style.left = (data.x * rect.width) + 'px';
-marker.style.top = (data.y * rect.height) + 'px';
-marker.style.width = cityName === 'ANKARA' ? '14px' : '10px';
-marker.style.height = cityName === 'ANKARA' ? '14px' : '10px';
-marker.style.background = cityName === 'ANKARA' ? '#ff0000' : '#00ffff';
-marker.style.boxShadow = cityName === 'ANKARA' ? '0 0 15px #ff0000' : '0 0 8px #00ffff';
-
                 
                 const label = document.createElement('div');
                 label.className = 'city-name';
@@ -864,15 +730,13 @@ marker.style.boxShadow = cityName === 'ANKARA' ? '0 0 15px #ff0000' : '0 0 8px #
                 if (aircraft.status === 'FLYING') {
                     if (aircraft.isHolding) {
                         aircraft.holdingTime += (simSpeed / 60);
-                        // Holding pattern - uçak aynı yerde döner
                     } else {
-                        // Normal uçuş
                         if (aircraft.currentWaypointIndex < aircraft.route.length) {
                             const targetWp = aircraft.route[aircraft.currentWaypointIndex];
                             const distance = calculateDistance(aircraft.currentX, aircraft.currentY, 
                                                               targetWp.x, targetWp.y);
                             
-                            const speed = aircraft.speed / 60 / 600; // Normalize edilmiş hız
+                            const speed = aircraft.speed / 60 / 600;
                             
                             if (distance > speed) {
                                 const dx = targetWp.x - aircraft.currentX;
@@ -885,7 +749,6 @@ marker.style.boxShadow = cityName === 'ANKARA' ? '0 0 15px #ff0000' : '0 0 8px #
                                 aircraft.currentX = targetWp.x;
                                 aircraft.currentY = targetWp.y;
                                 
-                                // Waypoint'e ulaştı - pozisyon raporu
                                 const nextWpIndex = aircraft.currentWaypointIndex + 1;
                                 const nextWp = nextWpIndex < aircraft.route.length ? 
                                     aircraft.route[nextWpIndex].name : 'LANDING';
@@ -893,4 +756,116 @@ marker.style.boxShadow = cityName === 'ANKARA' ? '0 0 15px #ff0000' : '0 0 8px #
                                 addPositionReport(aircraft.callsign, targetWp.name, simTime, 
                                                 aircraft.altitude, nextWp, simTime + 10);
                                 
-                                aircraft.currentWayp
+                                aircraft.currentWaypointIndex++;
+                                
+                                if (aircraft.currentWaypointIndex === aircraft.route.length - 1) {
+                                    aircraft.targetAltitude = 3000;
+                                }
+                            }
+                        }
+                        
+                        if (aircraft.altitude > aircraft.targetAltitude) {
+                            aircraft.altitude -= 500 * (simSpeed / 60);
+                        } else if (aircraft.altitude < aircraft.targetAltitude) {
+                            aircraft.altitude += 500 * (simSpeed / 60);
+                        }
+                        
+                        if (aircraft.currentWaypointIndex >= aircraft.route.length && 
+                            aircraft.altitude <= 1000) {
+                            aircraft.status = 'LANDED';
+                            addPositionReport(aircraft.callsign, 'LTAC', simTime, 0, 'LANDED', simTime);
+                        }
+                    }
+                    
+                    if (aircraft.status === 'FLYING') {
+                        const aircraftEl = document.createElement('div');
+                        aircraftEl.className = 'aircraft' + (aircraft.isHolding ? ' holding' : '');
+                        aircraftEl.style.left = (aircraft.currentX * rect.width) + 'px';
+                        aircraftEl.style.top = (aircraft.currentY * rect.height) + 'px';
+                        
+                        const label = document.createElement('div');
+                        label.className = 'aircraft-label';
+                        label.innerHTML = `${aircraft.callsign}<br>FL${Math.floor(aircraft.altitude/100)} ${aircraft.speed}kts`;
+                        label.style.left = (aircraft.currentX * rect.width) + 'px';
+                        label.style.top = (aircraft.currentY * rect.height) + 'px';
+                        
+                        map.appendChild(aircraftEl);
+                        map.appendChild(label);
+                    }
+                }
+                
+                for (let j = index + 1; j < aircraftData.length; j++) {
+                    const other = aircraftData[j];
+                    if (aircraft.status === 'FLYING' && other.status === 'FLYING') {
+                        const distance = calculateDistance(aircraft.currentX, aircraft.currentY,
+                                                          other.currentX, other.currentY) * 600;
+                        const altDiff = Math.abs(aircraft.altitude - other.altitude);
+                        
+                        if (distance < 5 && altDiff < 1000) {
+                            alerts.push({
+                                type: 'alert',
+                                text: `⚠️ SEPARATION WARNING: ${aircraft.callsign} & ${other.callsign} - ${distance.toFixed(1)} NM, ${altDiff} ft`
+                            });
+                        } else if (distance < 10 && altDiff < 2000) {
+                            alerts.push({
+                                type: 'warning',
+                                text: `⚡ CAUTION: ${aircraft.callsign} & ${other.callsign} - ${distance.toFixed(1)} NM`
+                            });
+                        }
+                    }
+                }
+            });
+            
+            const alertsDiv = document.getElementById('alerts');
+            const existingAlerts = alertsDiv.querySelectorAll('.alert, .warning');
+            existingAlerts.forEach(a => {
+                if (!a.textContent.includes('ATC') && !a.textContent.includes('HOLD') && 
+                    !a.textContent.includes('CONTINUE') && !a.textContent.includes('REDUCE')) {
+                    a.remove();
+                }
+            });
+            
+            alerts.forEach(alert => {
+                const alertEl = document.createElement('div');
+                alertEl.className = alert.type;
+                alertEl.textContent = alert.text;
+                alertsDiv.appendChild(alertEl);
+            });
+            
+            updateAircraftList();
+        }
+
+        function startSimulation() {
+            if (simInterval) clearInterval(simInterval);
+            simInterval = setInterval(updateSimulation, 100);
+        }
+
+        function setSimSpeed(speed) {
+            simSpeed = speed;
+            document.querySelectorAll('.speed-control button').forEach(btn => {
+                btn.style.background = '#00ff00';
+                btn.style.color = '#0a0e27';
+            });
+            event.target.style.background = '#00ffff';
+            event.target.style.color = '#0a0e27';
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            const btn = document.getElementById('pause-btn');
+            btn.textContent = isPaused ? '▶ RESUME' : '⏸ PAUSE';
+            btn.style.background = isPaused ? '#ff9900' : '#00ff00';
+        }
+
+        function clearAllAircraft() {
+            if (confirm('Tüm uçakları silmek istediğinizden emin misiniz?')) {
+                aircraftData = [];
+                positionReports = [];
+                updateAircraftList();
+                updatePositionReports();
+                document.getElementById('alerts').innerHTML = '';
+            }
+        }
+    </script>
+</body>
+</html>
